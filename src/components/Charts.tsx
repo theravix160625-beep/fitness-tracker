@@ -144,7 +144,7 @@ export default function Charts({ dailyLogs, weeklyCheckIns, workoutSessions }: P
               <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
               <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#6b7280' }} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: '#6b7280' }} tickLine={false} domain={['auto', 'auto']} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v} kg`, 'Gem. gewicht']} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(v) => [`${v} kg`, 'Gem. gewicht']} />
               <Line type="monotone" dataKey="avg" name="Wekelijks gem." stroke="#06b6d4" strokeWidth={2.5} dot={{ r: 4, fill: '#06b6d4' }} connectNulls />
             </LineChart>
           </ResponsiveContainer>
