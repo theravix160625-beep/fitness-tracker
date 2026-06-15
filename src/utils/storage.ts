@@ -5,9 +5,15 @@ export function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2)
 }
 
+async function dbSave(table: string, row: object): Promise<string | null> {
+  const { error } = await supabase.from(table).upsert(row)
+  if (error) return error.message
+  return null
+}
+
 // Workouts
-export async function saveWorkout(session: WorkoutSession): Promise<void> {
-  const row = {
+export async function saveWorkout(session: WorkoutSession): Promise<string | null> {
+  return dbSave('workouts', {
     id: session.id,
     date: session.date,
     cycle_day: session.cycleDay,
@@ -15,8 +21,7 @@ export async function saveWorkout(session: WorkoutSession): Promise<void> {
     energy_level: session.energyLevel,
     notes: session.notes,
     duration_minutes: session.durationMinutes ?? null,
-  }
-  await supabase.from('workouts').upsert(row)
+  })
 }
 
 export async function loadWorkouts(): Promise<WorkoutSession[]> {
@@ -24,7 +29,8 @@ export async function loadWorkouts(): Promise<WorkoutSession[]> {
     .from('workouts')
     .select('*')
     .order('date', { ascending: false })
-  if (error || !data) return []
+  if (error) { console.error('loadWorkouts:', error.message); return [] }
+  if (!data) return []
   return data.map(row => ({
     id: row.id,
     date: row.date,
@@ -41,8 +47,8 @@ export async function deleteWorkout(id: string): Promise<void> {
 }
 
 // Daily Logs
-export async function saveDailyLog(log: DailyLog): Promise<void> {
-  const row = {
+export async function saveDailyLog(log: DailyLog): Promise<string | null> {
+  return dbSave('daily_logs', {
     id: log.id,
     date: log.date,
     weight: log.weight,
@@ -50,8 +56,7 @@ export async function saveDailyLog(log: DailyLog): Promise<void> {
     sleep_quality: log.sleepQuality,
     steps: log.steps,
     notes: log.notes,
-  }
-  await supabase.from('daily_logs').upsert(row, { onConflict: 'date' })
+  })
 }
 
 export async function loadDailyLogs(): Promise<DailyLog[]> {
@@ -59,7 +64,8 @@ export async function loadDailyLogs(): Promise<DailyLog[]> {
     .from('daily_logs')
     .select('*')
     .order('date', { ascending: false })
-  if (error || !data) return []
+  if (error) { console.error('loadDailyLogs:', error.message); return [] }
+  if (!data) return []
   return data.map(row => ({
     id: row.id,
     date: row.date,
@@ -76,8 +82,8 @@ export async function deleteDailyLog(id: string): Promise<void> {
 }
 
 // Weekly Check-ins
-export async function saveWeeklyCheckIn(checkin: WeeklyCheckIn): Promise<void> {
-  const row = {
+export async function saveWeeklyCheckIn(checkin: WeeklyCheckIn): Promise<string | null> {
+  return dbSave('weekly_checkins', {
     id: checkin.id,
     date: checkin.date,
     weight: checkin.weight,
@@ -85,8 +91,7 @@ export async function saveWeeklyCheckIn(checkin: WeeklyCheckIn): Promise<void> {
     photos: checkin.photos,
     notes: checkin.notes,
     avg_calories: checkin.avgCalories,
-  }
-  await supabase.from('weekly_checkins').upsert(row)
+  })
 }
 
 export async function loadWeeklyCheckIns(): Promise<WeeklyCheckIn[]> {
@@ -94,7 +99,8 @@ export async function loadWeeklyCheckIns(): Promise<WeeklyCheckIn[]> {
     .from('weekly_checkins')
     .select('*')
     .order('date', { ascending: false })
-  if (error || !data) return []
+  if (error) { console.error('loadWeeklyCheckIns:', error.message); return [] }
+  if (!data) return []
   return data.map(row => ({
     id: row.id,
     date: row.date,
@@ -110,7 +116,6 @@ export async function deleteWeeklyCheckIn(id: string): Promise<void> {
   await supabase.from('weekly_checkins').delete().eq('id', id)
 }
 
-// Export all data as JSON backup
 export async function exportAllData(): Promise<void> {
   const [workouts, dailyLogs, weeklyCheckIns] = await Promise.all([
     loadWorkouts(),

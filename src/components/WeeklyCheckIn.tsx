@@ -24,6 +24,7 @@ export default function WeeklyCheckIn() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState<WeeklyCheckInType>(emptyForm)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -37,7 +38,13 @@ export default function WeeklyCheckIn() {
   async function handleSave() {
     if (saving) return
     setSaving(true)
-    await saveWeeklyCheckIn(form)
+    setError(null)
+    const err = await saveWeeklyCheckIn(form)
+    if (err) {
+      setError(err)
+      setSaving(false)
+      return
+    }
     const data = await loadWeeklyCheckIns()
     setCheckIns(data)
     setSaving(false)
@@ -147,6 +154,12 @@ export default function WeeklyCheckIn() {
             rows={4}
           />
         </div>
+
+        {error && (
+          <div className="mb-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <p className="text-xs text-red-400">❌ Fout: {error}</p>
+          </div>
+        )}
 
         <button
           onClick={handleSave}
