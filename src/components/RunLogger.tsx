@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react'
-import type { RunSession } from '../types'
+import type { RunSession, ShiftType } from '../types'
 import { saveRunSession, loadRunSessions, deleteRunSession, generateId } from '../utils/storage'
+import { playSave, playDelete } from '../utils/sounds'
+
+const SHIFTS: { value: ShiftType; label: string; icon: string; color: string }[] = [
+  { value: 'none',    label: 'Geen dienst', icon: '🌤',  color: 'border-gray-600 text-gray-400' },
+  { value: 'day',     label: 'Dagdienst',   icon: '☀️',  color: 'border-amber-500 text-amber-400' },
+  { value: 'evening', label: 'Avonddienst', icon: '🌆',  color: 'border-orange-500 text-orange-400' },
+  { value: 'night',   label: 'Nachtdienst', icon: '🌙',  color: 'border-indigo-500 text-indigo-400' },
+]
 
 function todayStr() { return new Date().toISOString().split('T')[0] }
 
@@ -24,7 +32,7 @@ const RUN_TYPES: { value: RunSession['type']; label: string; color: string }[] =
 ]
 
 function emptyRun(date = todayStr()): RunSession {
-  return { id: generateId(), date, distanceKm: null, durationMin: null, heartRateAvg: null, feeling: 7, type: 'easy', notes: '' }
+  return { id: generateId(), date, distanceKm: null, durationMin: null, heartRateAvg: null, feeling: 7, type: 'easy', notes: '', shiftType: 'none' }
 }
 
 interface Props {
@@ -54,10 +62,12 @@ export default function RunLogger({ defaultDate, onBack }: Props) {
     setSaved(true)
     setShowForm(false)
     setForm(emptyRun(defaultDate))
+    playSave()
     setTimeout(() => setSaved(false), 2000)
   }
 
   async function handleDelete(id: string) {
+    playDelete()
     await deleteRunSession(id)
     setRuns(await loadRunSessions())
   }
@@ -105,6 +115,19 @@ export default function RunLogger({ defaultDate, onBack }: Props) {
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${form.type === t.value ? t.color : 'text-gray-500 bg-transparent border-[#2a3448]'}`}
                 >
                   {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Dienst */}
+          <div className="mb-4">
+            <label className="text-xs text-gray-500 block mb-2 uppercase tracking-wide font-semibold">Dienst</label>
+            <div className="grid grid-cols-2 gap-2">
+              {SHIFTS.map(s => (
+                <button key={s.value} onClick={() => setForm(f => ({ ...f, shiftType: s.value }))}
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all min-h-[44px] ${form.shiftType === s.value ? `${s.color} bg-white/5` : 'border-[#1f2937] text-gray-600'}`}>
+                  <span>{s.icon}</span><span className="text-xs">{s.label}</span>
                 </button>
               ))}
             </div>

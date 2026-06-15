@@ -1,6 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
-import type { WeeklyCheckIn as WeeklyCheckInType } from '../types'
+import type { WeeklyCheckIn as WeeklyCheckInType, ShiftType } from '../types'
 import { saveWeeklyCheckIn, loadWeeklyCheckIns, deleteWeeklyCheckIn, generateId } from '../utils/storage'
+import { playSave, playDelete } from '../utils/sounds'
+
+const SHIFTS: { value: ShiftType; label: string; icon: string; color: string }[] = [
+  { value: 'none',    label: 'Geen dienst', icon: '🌤',  color: 'border-gray-600 text-gray-400' },
+  { value: 'day',     label: 'Dagdienst',   icon: '☀️',  color: 'border-amber-500 text-amber-400' },
+  { value: 'evening', label: 'Avonddienst', icon: '🌆',  color: 'border-orange-500 text-orange-400' },
+  { value: 'night',   label: 'Nachtdienst', icon: '🌙',  color: 'border-indigo-500 text-indigo-400' },
+]
 
 function getMostRecentSunday(): string {
   const d = new Date()
@@ -18,7 +26,7 @@ function emptyForm(): WeeklyCheckInType {
   return {
     id: generateId(), date: getMostRecentSunday(), weight: null, vo2max: null,
     photos: [], notes: '', avgCalories: null,
-    waist: null, hips: null, chest: null, upperArm: null,
+    waist: null, hips: null, chest: null, upperArm: null, shiftType: 'none',
   }
 }
 
@@ -142,10 +150,12 @@ export default function WeeklyCheckIn() {
     setSaving(false)
     setSaved(true)
     setShowForm(false)
+    playSave()
     setTimeout(() => setSaved(false), 2000)
   }
 
   async function handleDelete(id: string) {
+    playDelete()
     await deleteWeeklyCheckIn(id)
     setCheckIns(await loadWeeklyCheckIns())
   }
@@ -205,6 +215,24 @@ export default function WeeklyCheckIn() {
                 className="bg-[#1a2030] border border-[#2a3448] rounded-lg px-2 py-1 text-sm text-gray-300 focus:outline-none focus:border-blue-500"
               />
               <button onClick={() => setShowForm(false)} className="text-gray-500 text-xl">×</button>
+            </div>
+          </div>
+
+          {/* Dienst */}
+          <div className="mb-4">
+            <label className="text-xs text-gray-500 block mb-2 uppercase tracking-wide font-semibold">Dienst</label>
+            <div className="grid grid-cols-2 gap-2">
+              {SHIFTS.map(s => (
+                <button
+                  key={s.value}
+                  onClick={() => setForm(f => ({ ...f, shiftType: s.value }))}
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all min-h-[44px] ${
+                    form.shiftType === s.value ? `${s.color} bg-white/5` : 'border-[#1f2937] text-gray-600'
+                  }`}
+                >
+                  <span>{s.icon}</span><span className="text-xs">{s.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 

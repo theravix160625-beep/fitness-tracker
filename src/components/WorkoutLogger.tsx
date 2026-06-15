@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react'
-import type { WorkoutSession, ExerciseLog, ExerciseSet } from '../types'
+import type { WorkoutSession, ExerciseLog, ExerciseSet, ShiftType } from '../types'
 import { SCHEMA } from '../data/schema'
 import { getCurrentCycleDay } from '../utils/cycleDay'
 import { saveWorkout, loadWorkouts, deleteWorkout, generateId } from '../utils/storage'
 import ExerciseCard from './ExerciseCard'
 import SwipeToDelete from './SwipeToDelete'
 import RunLogger from './RunLogger'
+import { playSave, playDelete } from '../utils/sounds'
+
+const SHIFTS: { value: ShiftType; label: string; icon: string; color: string }[] = [
+  { value: 'none',    label: 'Geen dienst', icon: '🌤',  color: 'border-gray-600 text-gray-400' },
+  { value: 'day',     label: 'Dagdienst',   icon: '☀️',  color: 'border-amber-500 text-amber-400' },
+  { value: 'evening', label: 'Avonddienst', icon: '🌆',  color: 'border-orange-500 text-orange-400' },
+  { value: 'night',   label: 'Nachtdienst', icon: '🌙',  color: 'border-indigo-500 text-indigo-400' },
+]
 
 function todayStr() {
   return new Date().toISOString().split('T')[0]
@@ -72,7 +80,7 @@ export default function WorkoutLogger() {
     const day = SCHEMA[dayIdx]
     const session: WorkoutSession = {
       id: generateId(), date: todayStr(), cycleDay: day.day,
-      exercises: buildInitialExercises(dayIdx), energyLevel: 7, notes: '',
+      exercises: buildInitialExercises(dayIdx), energyLevel: 7, notes: '', shiftType: 'none',
     }
     setActiveSession(session)
     setActiveDayIdx(dayIdx)
@@ -101,10 +109,12 @@ export default function WorkoutLogger() {
     setAllSessions(sessions)
     setSaving(false)
     setSaved(true)
+    playSave()
     setTimeout(() => { setView('list'); setActiveSession(null); setSaved(false) }, 1000)
   }
 
   async function handleDelete(id: string) {
+    playDelete()
     await deleteWorkout(id)
     setAllSessions(await loadWorkouts())
   }
@@ -181,6 +191,20 @@ export default function WorkoutLogger() {
           />
           <div className="flex justify-between text-xs text-gray-700 mt-1">
             <span>Uitgeput</span><span>Topfit</span>
+          </div>
+        </div>
+
+        {/* Shift type */}
+        <div className="bg-[#111827] rounded-xl p-4 mb-4 border border-[#1f2937]">
+          <label className="text-xs text-gray-500 block mb-2 uppercase tracking-wide font-semibold">Dienst</label>
+          <div className="grid grid-cols-2 gap-2">
+            {SHIFTS.map(s => (
+              <button key={s.value}
+                onClick={() => setActiveSession({ ...activeSession, shiftType: s.value })}
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all min-h-[44px] ${activeSession.shiftType === s.value ? `${s.color} bg-white/5` : 'border-[#1f2937] text-gray-600'}`}>
+                <span>{s.icon}</span><span className="text-xs">{s.label}</span>
+              </button>
+            ))}
           </div>
         </div>
 

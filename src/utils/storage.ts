@@ -17,6 +17,7 @@ export async function saveWorkout(session: WorkoutSession): Promise<string | nul
     id: session.id, date: session.date, cycle_day: session.cycleDay,
     exercises: session.exercises, energy_level: session.energyLevel,
     notes: session.notes, duration_minutes: session.durationMinutes ?? null,
+    shift_type: session.shiftType ?? 'none',
   })
 }
 
@@ -27,6 +28,7 @@ export async function loadWorkouts(): Promise<WorkoutSession[]> {
     id: row.id, date: row.date, cycleDay: row.cycle_day,
     exercises: row.exercises, energyLevel: row.energy_level,
     notes: row.notes, durationMinutes: row.duration_minutes,
+    shiftType: row.shift_type ?? 'none',
   }))
 }
 
@@ -39,6 +41,7 @@ export async function saveDailyLog(log: DailyLog): Promise<string | null> {
   return dbSave('daily_logs', {
     id: log.id, date: log.date, weight: log.weight, sleep: log.sleep,
     sleep_quality: log.sleepQuality, steps: log.steps, notes: log.notes,
+    mood: log.mood ?? null, shift_type: log.shiftType ?? 'none',
   })
 }
 
@@ -48,6 +51,7 @@ export async function loadDailyLogs(): Promise<DailyLog[]> {
   return (data ?? []).map(row => ({
     id: row.id, date: row.date, weight: row.weight, sleep: row.sleep,
     sleepQuality: row.sleep_quality, steps: row.steps, notes: row.notes,
+    mood: row.mood ?? null, shiftType: row.shift_type ?? 'none',
   }))
 }
 
@@ -62,6 +66,7 @@ export async function saveWeeklyCheckIn(checkin: WeeklyCheckIn): Promise<string 
     vo2max: checkin.vo2max, photos: checkin.photos, notes: checkin.notes,
     avg_calories: checkin.avgCalories, waist: checkin.waist,
     hips: checkin.hips, chest: checkin.chest, upper_arm: checkin.upperArm,
+    shift_type: checkin.shiftType ?? 'none',
   })
 }
 
@@ -73,6 +78,7 @@ export async function loadWeeklyCheckIns(): Promise<WeeklyCheckIn[]> {
     photos: row.photos ?? [], notes: row.notes, avgCalories: row.avg_calories,
     waist: row.waist ?? null, hips: row.hips ?? null,
     chest: row.chest ?? null, upperArm: row.upper_arm ?? null,
+    shiftType: row.shift_type ?? 'none',
   }))
 }
 
@@ -86,6 +92,7 @@ export async function saveRunSession(run: RunSession): Promise<string | null> {
     id: run.id, date: run.date, distance_km: run.distanceKm,
     duration_min: run.durationMin, heart_rate_avg: run.heartRateAvg,
     feeling: run.feeling, type: run.type, notes: run.notes,
+    shift_type: run.shiftType ?? 'none',
   })
 }
 
@@ -96,6 +103,7 @@ export async function loadRunSessions(): Promise<RunSession[]> {
     id: row.id, date: row.date, distanceKm: row.distance_km,
     durationMin: row.duration_min, heartRateAvg: row.heart_rate_avg,
     feeling: row.feeling, type: row.type, notes: row.notes,
+    shiftType: row.shift_type ?? 'none',
   }))
 }
 

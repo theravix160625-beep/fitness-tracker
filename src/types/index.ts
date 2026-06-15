@@ -1,3 +1,5 @@
+export type ShiftType = 'none' | 'day' | 'evening' | 'night'
+
 export interface ExerciseSet {
   weight: number | null
   reps: number | null
@@ -18,6 +20,7 @@ export interface WorkoutSession {
   energyLevel: number
   notes: string
   durationMinutes?: number
+  shiftType?: ShiftType
 }
 
 export interface DailyLog {
@@ -28,6 +31,8 @@ export interface DailyLog {
   sleepQuality: number | null
   steps: number | null
   notes: string
+  mood: number | null
+  shiftType: ShiftType
 }
 
 export interface WeeklyCheckIn {
@@ -42,6 +47,7 @@ export interface WeeklyCheckIn {
   hips: number | null
   chest: number | null
   upperArm: number | null
+  shiftType?: ShiftType
 }
 
 export interface RunSession {
@@ -53,6 +59,7 @@ export interface RunSession {
   feeling: number
   type: 'easy' | 'interval' | 'tempo' | 'long' | 'other'
   notes: string
+  shiftType?: ShiftType
 }
 
 export interface SchemaExercise {
