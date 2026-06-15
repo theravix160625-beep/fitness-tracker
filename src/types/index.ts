@@ -38,6 +38,21 @@ export interface WeeklyCheckIn {
   photos: string[]
   notes: string
   avgCalories: number | null
+  waist: number | null
+  hips: number | null
+  chest: number | null
+  upperArm: number | null
+}
+
+export interface RunSession {
+  id: string
+  date: string
+  distanceKm: number | null
+  durationMin: number | null
+  heartRateAvg: number | null
+  feeling: number
+  type: 'easy' | 'interval' | 'tempo' | 'long' | 'other'
+  notes: string
 }
 
 export interface SchemaExercise {

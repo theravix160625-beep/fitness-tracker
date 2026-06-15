@@ -5,6 +5,7 @@ import { getCurrentCycleDay } from '../utils/cycleDay'
 import { saveWorkout, loadWorkouts, deleteWorkout, generateId } from '../utils/storage'
 import ExerciseCard from './ExerciseCard'
 import SwipeToDelete from './SwipeToDelete'
+import RunLogger from './RunLogger'
 
 function todayStr() {
   return new Date().toISOString().split('T')[0]
@@ -49,7 +50,7 @@ function getSetHints(dayIndex: number, exerciseName: string): string[] {
   return hints
 }
 
-type View = 'list' | 'active' | 'history'
+type View = 'list' | 'active' | 'history' | 'run'
 
 export default function WorkoutLogger() {
   const [view, setView] = useState<View>('list')
@@ -59,30 +60,30 @@ export default function WorkoutLogger() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [runDate, setRunDate] = useState(todayStr())
 
   const currentCycleDay = getCurrentCycleDay()
 
   useEffect(() => {
-    loadWorkouts().then(sessions => {
-      setAllSessions(sessions)
-      setLoading(false)
-    })
+    loadWorkouts().then(sessions => { setAllSessions(sessions); setLoading(false) })
   }, [])
 
   function startWorkout(dayIdx: number) {
     const day = SCHEMA[dayIdx]
     const session: WorkoutSession = {
-      id: generateId(),
-      date: todayStr(),
-      cycleDay: day.day,
-      exercises: buildInitialExercises(dayIdx),
-      energyLevel: 7,
-      notes: '',
+      id: generateId(), date: todayStr(), cycleDay: day.day,
+      exercises: buildInitialExercises(dayIdx), energyLevel: 7, notes: '',
     }
     setActiveSession(session)
     setActiveDayIdx(dayIdx)
     setView('active')
     setSaved(false)
+  }
+
+  function startRun(dayIdx: number) {
+    setRunDate(todayStr())
+    setActiveDayIdx(dayIdx)
+    setView('run')
   }
 
   function updateExercise(index: number, exercise: ExerciseLog) {
@@ -100,17 +101,16 @@ export default function WorkoutLogger() {
     setAllSessions(sessions)
     setSaving(false)
     setSaved(true)
-    setTimeout(() => {
-      setView('list')
-      setActiveSession(null)
-      setSaved(false)
-    }, 1000)
+    setTimeout(() => { setView('list'); setActiveSession(null); setSaved(false) }, 1000)
   }
 
   async function handleDelete(id: string) {
     await deleteWorkout(id)
-    const sessions = await loadWorkouts()
-    setAllSessions(sessions)
+    setAllSessions(await loadWorkouts())
+  }
+
+  if (view === 'run') {
+    return <RunLogger defaultDate={runDate} onBack={() => setView('list')} />
   }
 
   if (view === 'history') {
@@ -146,9 +146,7 @@ export default function WorkoutLogger() {
                     {ex.name.split(' ').slice(0, 2).join(' ')}
                   </span>
                 ))}
-                {session.exercises.length > 4 && (
-                  <span className="text-xs text-gray-600">+{session.exercises.length - 4}</span>
-                )}
+                {session.exercises.length > 4 && <span className="text-xs text-gray-600">+{session.exercises.length - 4}</span>}
               </div>
             </div>
           </SwipeToDelete>
@@ -177,10 +175,7 @@ export default function WorkoutLogger() {
             Energieniveau: <span className="text-blue-400 font-bold">{activeSession.energyLevel}/10</span>
           </label>
           <input
-            type="range"
-            min={1}
-            max={10}
-            value={activeSession.energyLevel}
+            type="range" min={1} max={10} value={activeSession.energyLevel}
             onChange={e => setActiveSession({ ...activeSession, energyLevel: parseInt(e.target.value) })}
             className="w-full"
           />
@@ -191,8 +186,7 @@ export default function WorkoutLogger() {
 
         {activeSession.exercises.map((exercise, i) => (
           <ExerciseCard
-            key={i}
-            exercise={exercise}
+            key={i} exercise={exercise}
             onChange={ex => updateExercise(i, ex)}
             allSessions={allSessions}
             currentSessionId={activeSession.id}
@@ -212,14 +206,11 @@ export default function WorkoutLogger() {
         </div>
 
         <button
-          onClick={saveSession}
-          disabled={saved || saving}
+          onClick={saveSession} disabled={saved || saving}
           className={`w-full py-4 rounded-xl font-bold text-base transition-all min-h-[56px] ${
-            saved
-              ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-              : saving
-              ? 'bg-blue-500/50 text-white/60'
-              : 'bg-blue-500 text-white active:bg-blue-600'
+            saved ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+            : saving ? 'bg-blue-500/50 text-white/60'
+            : 'bg-blue-500 text-white active:bg-blue-600'
           }`}
         >
           {saved ? '✓ Opgeslagen!' : saving ? 'Opslaan...' : 'Workout opslaan'}
@@ -235,23 +226,17 @@ export default function WorkoutLogger() {
           <h1 className="text-2xl font-bold text-white">Workout</h1>
           <p className="text-sm text-gray-500 mt-0.5">Cycle dag {currentCycleDay} van 8</p>
         </div>
-        <button
-          onClick={() => setView('history')}
-          className="text-sm text-blue-400 bg-blue-400/10 px-3 py-2 rounded-lg border border-blue-400/20 min-h-[44px]"
-        >
+        <button onClick={() => setView('history')} className="text-sm text-blue-400 bg-blue-400/10 px-3 py-2 rounded-lg border border-blue-400/20 min-h-[44px]">
           Geschiedenis
         </button>
       </div>
 
-      {loading && (
-        <div className="text-center py-10 text-gray-600">
-          <p>Laden...</p>
-        </div>
-      )}
+      {loading && <div className="text-center py-10 text-gray-600"><p>Laden...</p></div>}
 
       {!loading && SCHEMA.map((day, idx) => {
         const isCurrent = day.day === currentCycleDay
         const isWorkout = day.type === 'workout'
+        const isRun = day.type === 'run'
         const recentSession = [...allSessions]
           .filter(s => s.cycleDay === day.day)
           .sort((a, b) => b.date.localeCompare(a.date))[0]
@@ -260,28 +245,22 @@ export default function WorkoutLogger() {
           <div
             key={day.day}
             className={`rounded-xl p-4 mb-3 border transition-all ${
-              isCurrent
-                ? 'border-blue-500 bg-[#0d1929]'
-                : 'border-[#1f2937] bg-[#111827]'
+              isCurrent ? 'border-blue-500 bg-[#0d1929]' : 'border-[#1f2937] bg-[#111827]'
             }`}
           >
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                    isCurrent ? 'bg-blue-500 text-white' : 'bg-[#1f2937] text-gray-500'
-                  }`}>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isCurrent ? 'bg-blue-500 text-white' : 'bg-[#1f2937] text-gray-500'}`}>
                     Dag {day.day}
                   </span>
                   {isCurrent && <span className="text-xs text-blue-400 font-medium">← Vandaag</span>}
                   {day.type === 'rest' && <span className="text-xs text-green-400">🌿 Rust</span>}
-                  {day.type === 'run' && <span className="text-xs text-orange-400">🏃 Run</span>}
+                  {isRun && <span className="text-xs text-orange-400">🏃 Run</span>}
                 </div>
                 <h3 className="font-semibold text-white mt-1">{day.title}</h3>
                 <p className="text-xs text-gray-500 mt-0.5">{day.subtitle}</p>
-                {recentSession && (
-                  <p className="text-xs text-gray-700 mt-1">Laatst: {formatDate(recentSession.date)}</p>
-                )}
+                {recentSession && <p className="text-xs text-gray-700 mt-1">Workout: {formatDate(recentSession.date)}</p>}
               </div>
               <div className="flex flex-col items-end gap-2 ml-3 shrink-0">
                 <span className="text-xs text-gray-600">{day.calories} kcal</span>
@@ -289,12 +268,20 @@ export default function WorkoutLogger() {
                   <button
                     onClick={() => startWorkout(idx)}
                     className={`text-sm px-4 py-2 rounded-lg font-medium min-h-[44px] transition-colors ${
-                      isCurrent
-                        ? 'bg-blue-500 text-white active:bg-blue-600'
-                        : 'bg-[#1f2937] text-gray-300 active:bg-[#2a3448]'
+                      isCurrent ? 'bg-blue-500 text-white active:bg-blue-600' : 'bg-[#1f2937] text-gray-300 active:bg-[#2a3448]'
                     }`}
                   >
                     Start
+                  </button>
+                )}
+                {isRun && (
+                  <button
+                    onClick={() => startRun(idx)}
+                    className={`text-sm px-4 py-2 rounded-lg font-medium min-h-[44px] transition-colors ${
+                      isCurrent ? 'bg-orange-500 text-white active:bg-orange-600' : 'bg-[#1f2937] text-gray-300 active:bg-[#2a3448]'
+                    }`}
+                  >
+                    Log Run
                   </button>
                 )}
               </div>
